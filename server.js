@@ -50,11 +50,15 @@ app.get('/login', (req, res) => res.render('login', { error: req.query.e || null
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  const row = db.prepare(
-    `SELECT id, name, role FROM users
-     WHERE username = '${username}' AND password = '${md5(password || '')}'`).get();
+
+  const loginCommand = db.prepare(
+  'SELECT id, name, role FROM users WHERE username = ? AND password = ?'
+  );
+
+  const row = loginCommand.get(username, md5(password || ''));
+ 
   if (!row) {
-    const exists = db.prepare('SELECT 1 FROM users WHERE username = ?').get(username);
+    const exists = db.prepare('SELECT 1 FROM users WHERE username = ?').get(username);//paramaterized here but not elsewhere
     return res.redirect('/login?e=' + encodeURIComponent(
       exists ? 'Wrong password.' : 'No such user.'));
   }
@@ -66,7 +70,7 @@ app.post('/login', (req, res) => {
 app.get('/logout', (req, res) => { res.clearCookie('token'); res.redirect('/login'); });
 
 app.get('/claim/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM claims WHERE id = ?').get(req.params.id);
+  const row = db.prepare('SELECT * FROM claims WHERE id = ?').get(req.params.id);//paramaterized here but not elsewhere
   if (!row) return res.status(404).send('Not found');
   res.render('claim', { c: row });
 });
