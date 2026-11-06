@@ -70,8 +70,11 @@ app.post('/login', (req, res) => {
 app.get('/logout', (req, res) => { res.clearCookie('token'); res.redirect('/login'); });
 
 app.get('/claim/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM claims WHERE id = ?').get(req.params.id);//paramaterized here but not elsewhere
-  if (!row) return res.status(404).send('Not found');
+  const u = currentUser(req);
+  if (!u) return res.redirect('/login');
+  const row = db.prepare('SELECT * FROM claims WHERE id = ? AND user_id = ?')
+                .get(req.params.id, u.uid);
+  if (!row) return res.status(404).send('Not found'); 
   res.render('claim', { c: row });
 });
 
