@@ -12,7 +12,6 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { exec } = require('child_process');
 const path = require('path');
 const Database = require('better-sqlite3');
 
@@ -91,10 +90,19 @@ app.get('/receipt', (req, res) => {
 });
 
 app.get('/export', (req, res) => {
-  const month = req.query.month || '2026-09';
-  const out = `/tmp/expenses-${month}.csv`;
-  exec(`sqlite3 ${path.join(__dirname, 'expenses.db')} '.mode csv' '.once ${out}' 'SELECT * FROM claims'`,
-    () => res.download(out));
+  const month = req.query.month === undefined ? '2026-09' : req.query.month;
+  if (typeof month !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    return res.status(400).send('Month must be in YYYY-MM format.');
+  }
+
+  const rows = db.prepare('SELECT * FROM claims').raw().all();
+  const csv = rows.map((row) => row.map((value) => {
+    const text = value == null ? '' : String(value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }).join(',')).join('\r\n');
+
+  res.attachment(`expenses-${month}.csv`);
+  res.send(csv ? `${csv}\r\n` : '');
 });
 
 app.post('/profile', (req, res) => {
