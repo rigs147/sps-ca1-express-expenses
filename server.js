@@ -131,9 +131,5 @@ app.get('/admin/users', (req, res) => {
   res.render('admin', { users: rows });
 });
 
-//Open redirect vulnerability (CWE-601) - can lead to phishing attacks or other malicious redirects
-//Either remove this endpoint or validate the 'next' parameter to keep it local / within allowed domains.
-app.get('/go', (req, res) => res.redirect(req.query.next || '/'));
-
 app.listen(3000, '127.0.0.1', () =>
   console.log('Meridian Expenses (vulnerable) on http://127.0.0.1:3000'));
