@@ -77,6 +77,7 @@ app.get('/claim/:id', (req, res) => {
 
 app.post('/claim/new', (req, res) => {
   const u = currentUser(req);
+  if (!u) return res.redirect('/login');
   db.prepare(`INSERT INTO claims (user_id, merchant, amount, note, status)
               VALUES (?,?,?,?,'pending')`)
     .run(u && u.uid, req.body.merchant, req.body.amount, req.body.note);
