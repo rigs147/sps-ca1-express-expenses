@@ -124,6 +124,9 @@ app.post('/profile', (req, res) => {
 });
 
 app.get('/admin/users', (req, res) => {
+  const u = currentUser(req);
+  if (!u) return res.redirect('/login');
+  if (u.role !== 'admin') return res.status(403).send('Forbidden');
   const rows = db.prepare('SELECT id, username, name, role FROM users').all();
   res.render('admin', { users: rows });
 });
