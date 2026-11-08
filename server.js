@@ -43,8 +43,7 @@ function currentUser(req) {
 app.get('/', (req, res) => {
   const u = currentUser(req);
   if (!u) return res.redirect('/login');
-  const rows = db.prepare(
-    `SELECT * FROM claims WHERE user_id = ${u.uid} ORDER BY id DESC`).all();
+  const rows = db.prepare('SELECT * FROM claims WHERE user_id = ? ORDER BY id DESC').all(u.uid);
   res.render('index', { claims: rows, user: u });
 });
 
