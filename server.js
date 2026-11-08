@@ -11,7 +11,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
@@ -29,8 +29,6 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
-
-const md5 = (s) => crypto.createHash('md5').update(s).digest('hex');
 
 function currentUser(req) {
   const t = req.cookies.token;
@@ -55,16 +53,12 @@ app.get('/login', (req, res) => res.render('login', { error: req.query.e || null
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  const loginCommand = db.prepare(
-  'SELECT id, name, role FROM users WHERE username = ? AND password = ?'
-  );
+  const row = db.prepare(
+    'SELECT id, name, role, password FROM users WHERE username = ?'
+  ).get(username);
 
-  const row = loginCommand.get(username, md5(password || ''));
- 
-  if (!row) {
-    const exists = db.prepare('SELECT 1 FROM users WHERE username = ?').get(username);//paramaterized here but not elsewhere
-    return res.redirect('/login?e=' + encodeURIComponent(
-      exists ? 'Wrong password.' : 'No such user.'));
+  if (!row || !bcrypt.compareSync(password || '', row.password)) {
+    return res.redirect('/login?e=' + encodeURIComponent('Invalid credentials.'));
   }
   const token = jwt.sign({ uid: row.id, name: row.name, role: row.role }, JWT_SECRET, { expiresIn: '1h' });
   res.cookie('token', token);
