@@ -60,7 +60,7 @@ app.post('/login', (req, res) => {
     return res.redirect('/login?e=' + encodeURIComponent('Invalid credentials.'));
   }
   const token = jwt.sign({ uid: row.id, name: row.name, role: row.role }, JWT_SECRET, { expiresIn: '1h' });
-  res.cookie('token', token);
+  res.cookie('token', token,{ httpOnly: true, sameSite: 'strict' });
   res.redirect('/');
 });
 
