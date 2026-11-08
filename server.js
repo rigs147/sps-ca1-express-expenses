@@ -78,9 +78,14 @@ app.get('/claim/:id', (req, res) => {
 app.post('/claim/new', (req, res) => {
   const u = currentUser(req);
   if (!u) return res.redirect('/login');
-  db.prepare(`INSERT INTO claims (user_id, merchant, amount, note, status)
-              VALUES (?,?,?,?,'pending')`)
-    .run(u && u.uid, req.body.merchant, req.body.amount, req.body.note);
+  const { merchant, amount, note } = req.body;
+  if (!merchant || !merchant.trim() || !amount || !amount.trim()) {
+    return res.status(400).send('Error: Merchant and Amount are required.');
+  }
+  db.prepare(`
+    INSERT INTO claims (user_id, merchant, amount, note, status) 
+    VALUES (?, ?, ?, ?, 'pending')
+  `).run(u.uid, merchant, amount, note);
   res.redirect('/');
 });
 
