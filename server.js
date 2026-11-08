@@ -116,8 +116,16 @@ app.get('/export', (req, res) => {
 
 app.post('/profile', (req, res) => {
   const u = currentUser(req);
-  const fields = Object.keys(req.body).map((k) => `${k} = '${req.body[k]}'`).join(', ');
-  db.exec(`UPDATE users SET ${fields} WHERE id = ${u.uid}`);
+  if (!u) return res.redirect('/login');
+
+  const fields = Object.keys(req.body);
+  if (fields.length !== 1 || fields[0] !== 'name' ||
+      typeof req.body.name !== 'string' || !req.body.name.trim()) {
+    return res.status(400).send('Enter a valid name.');
+  }
+
+  db.prepare('UPDATE users SET name = ? WHERE id = ?')
+    .run(req.body.name, u.uid);
   res.redirect('/');
 });
 
