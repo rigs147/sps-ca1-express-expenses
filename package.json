@@ -4,9 +4,13 @@
   "private": true,
   "description": "INTENTIONALLY VULNERABLE teaching artefact — CCT PGDip Cybersecurity, Secure Programming and Scripting CA1. Do not deploy.",
   "main": "server.js",
-  "scripts": { "seed": "node seed.js", "start": "node server.js" },
+  "scripts": {
+    "seed": "node seed.js",
+    "start": "node server.js"
+  },
   "dependencies": {
-    "better-sqlite3": "^11.3.0",
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^13.0.3",
     "cookie-parser": "^1.4.6",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
