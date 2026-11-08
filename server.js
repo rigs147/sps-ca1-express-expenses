@@ -12,12 +12,17 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
+const envFile = path.join(__dirname, '.env');
+if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET must be set in the .env file.');
+
 const app = express();
 const db = new Database(path.join(__dirname, 'expenses.db'));
-const JWT_SECRET = 'meridian-dev-key';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -61,7 +66,7 @@ app.post('/login', (req, res) => {
     return res.redirect('/login?e=' + encodeURIComponent(
       exists ? 'Wrong password.' : 'No such user.'));
   }
-  const token = jwt.sign({ uid: row.id, name: row.name, role: row.role }, JWT_SECRET);
+  const token = jwt.sign({ uid: row.id, name: row.name, role: row.role }, JWT_SECRET, { expiresIn: '1h' });
   res.cookie('token', token);
   res.redirect('/');
 });
@@ -122,9 +127,6 @@ app.get('/admin/users', (req, res) => {
 });
 
 app.get('/go', (req, res) => res.redirect(req.query.next || '/'));
-
-app.get('/debug/config', (req, res) =>
-  res.json({ jwtSecret: JWT_SECRET, db: path.join(__dirname, 'expenses.db'), node: process.version }));
 
 app.listen(3000, '127.0.0.1', () =>
   console.log('Meridian Expenses (vulnerable) on http://127.0.0.1:3000'));
