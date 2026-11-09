@@ -101,6 +101,12 @@ app.get('/receipt', (req, res) => {
 });
 
 app.get('/export', (req, res) => {
+  const u = currentUser(req);
+  if (!u) return res.redirect('/login');
+  if (u.role !== 'finance' && u.role !== 'admin') {
+    return res.status(403).send('Forbidden');
+  }
+  
   const month = req.query.month === undefined ? '2026-09' : req.query.month;
   if (typeof month !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
     return res.status(400).send('Month must be in YYYY-MM format.');
