@@ -92,18 +92,35 @@ app.post('/claim/new', (req, res) => {
   res.redirect('/');
 });
 
+function isFinanceOrAdmin(user) {
+  return user.role === 'finance' || user.role === 'admin';
+}
+
 app.get('/receipt', (req, res) => {
+  const u = currentUser(req);
+  if (!u) return res.redirect('/login');
+
   const filename = req.query.f;
   if (typeof filename !== 'string' || !/^claim-[0-9]+\.txt$/.test(filename)) {
     return res.status(400).send('Invalid receipt filename.');
   }
+
+  const claimId = filename.slice(6, -4);
+  const row = db.prepare('SELECT user_id FROM claims WHERE id = ?').get(claimId);
+  if (!row) return res.status(404).send('Not found');
+
+  if (row.user_id !== u.uid && !isFinanceOrAdmin(u)) {
+    return res.status(403).send('Forbidden');
+  }
+
   res.sendFile(filename, { root: path.join(__dirname, 'receipts') });
 });
 
 app.get('/export', (req, res) => {
   const u = currentUser(req);
   if (!u) return res.redirect('/login');
-  if (u.role !== 'finance' && u.role !== 'admin') {
+
+  if (!isFinanceOrAdmin(u)) {
     return res.status(403).send('Forbidden');
   }
   
