@@ -52,6 +52,10 @@ app.get('/login', (req, res) => res.render('login', { error: req.query.e || null
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
+  if(typeof username !== "string" || typeof password !== 'string') {
+    return res.status(400).send('Invalid login format'); 
+  }
+
   const row = db.prepare(
     'SELECT id, name, role, password FROM users WHERE username = ?'
   ).get(username);
