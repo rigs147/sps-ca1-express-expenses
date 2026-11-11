@@ -139,7 +139,8 @@ app.get('/export', (req, res) => {
   const rows = db.prepare('SELECT * FROM claims').raw().all();
   const csv = rows.map((row) => row.map((value) => {
     const text = value == null ? '' : String(value);
-    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    const neutralizedText = /^\s*[=+\-@＝＋－＠]/.test(text) ? '\t' + text : text;
+    return `"${neutralizedText.replace(/"/g, '""')}"`;
   }).join(',')).join('\r\n');
 
   res.attachment(`expenses-${month}.csv`);
