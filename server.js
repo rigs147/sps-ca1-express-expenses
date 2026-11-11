@@ -12,6 +12,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const NO_USER_FOUND_PASSWORD = bcrypt.hashSync('no-user-found-password', 10);
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
@@ -60,7 +61,9 @@ app.post('/login', (req, res) => {
     'SELECT id, name, role, password FROM users WHERE username = ?'
   ).get(username);
 
-  if (!row || !bcrypt.compareSync(password || '', row.password)) {
+  const hash = row ? row.password : NO_USER_FOUND_PASSWORD;
+  const isValidPassword = bcrypt.compareSync(password, hash);
+  if (!row || !isValidPassword) {
     return res.redirect('/login?e=' + encodeURIComponent('Invalid credentials.'));
   }
   const token = jwt.sign({ uid: row.id, name: row.name, role: row.role }, JWT_SECRET, { expiresIn: '1h' });
