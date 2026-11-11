@@ -89,7 +89,7 @@ app.post('/claim/new', (req, res) => {
   const rawAmount = String(req.body.amount || '').trim();
   const note = String(req.body.note || '').trim();
   const amount = Number(rawAmount);
-  if (!merchant || rawAmount === '' || !Number.isFinite(amount)) {
+  if (!merchant || rawAmount === '' || !Number.isFinite(amount) || amount <= 0) {
     return res.status(400).send('Error: Merchant and a valid numeric amount are required.');
   }
   db.prepare(`
