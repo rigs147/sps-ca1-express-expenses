@@ -41,6 +41,16 @@ function currentUser(req) {
   }
 }
 
+function isFinanceOrAdmin(user) {
+  if (!user) return false;
+  return user.role === 'finance' || user.role === 'admin';
+}
+
+function canViewClaim(user, claim) {
+  if (!user || !claim) return false;
+  return isFinanceOrAdmin(user) || claim.user_id === user.uid;
+}
+
 app.get('/', (req, res) => {
   const u = currentUser(req);
   if (!u) return res.redirect('/login');
@@ -76,9 +86,8 @@ app.get('/logout', (req, res) => { res.clearCookie('token'); res.redirect('/logi
 app.get('/claim/:id', (req, res) => {
   const u = currentUser(req);
   if (!u) return res.redirect('/login');
-  const row = db.prepare('SELECT * FROM claims WHERE id = ? AND user_id = ?')
-                .get(req.params.id, u.uid);
-  if (!row) return res.status(404).send('Not found'); 
+  const row = db.prepare('SELECT * FROM claims WHERE id = ?').get(req.params.id);
+  if (!canViewClaim(u, row)) return res.status(404).send('Not found');
   res.render('claim', { c: row });
 });
 
@@ -99,10 +108,6 @@ app.post('/claim/new', (req, res) => {
   res.redirect('/');
 });
 
-function isFinanceOrAdmin(user) {
-  return user.role === 'finance' || user.role === 'admin';
-}
-
 app.get('/receipt', (req, res) => {
   const u = currentUser(req);
   if (!u) return res.redirect('/login');
@@ -114,11 +119,7 @@ app.get('/receipt', (req, res) => {
 
   const claimId = filename.slice(6, -4);
   const row = db.prepare('SELECT user_id FROM claims WHERE id = ?').get(claimId);
-  if (!row) return res.status(404).send('Not found');
-
-  if (row.user_id !== u.uid && !isFinanceOrAdmin(u)) {
-    return res.status(403).send('Forbidden');
-  }
+  if (!canViewClaim(u, row)) return res.status(404).send('Not found');
 
   res.sendFile(filename, { root: path.join(__dirname, 'receipts') });
 });
