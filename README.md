@@ -19,9 +19,13 @@ of a real internal tool that nobody security-reviewed.
 
 ## Running it
 
+Tested with Node.js v26.13.0 and npm v11.20.0.
+
+Important:
 Create .env file in root directory from .env.example before running. 
 This is needed to store JWT_SECRET which is read from .env in server.js.
 
+```bash
 npm install
 npm run seed            # creates expenses.db and sample receipts
 npm start               # http://127.0.0.1:3000
