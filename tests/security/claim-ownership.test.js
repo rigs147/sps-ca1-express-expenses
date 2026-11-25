@@ -97,3 +97,42 @@ test('receipt downloads enforce the same staff ownership rule', async () => {
   const denied = await rob.get('/receipt').query({ f: janeFile }).expect(404);
   assert.doesNotMatch(denied.text, janeReceiptText);
 });
+
+test('a claim is saved only when its amount is positive', async () => {
+  const jane = await signIn('jdoe', 'password1');
+  const db = app.locals.db;
+  const merchant = 'Test Merchant';
+
+  const countClaims = db.prepare('SELECT COUNT(*) AS total FROM claims');
+  const startingCount = countClaims.get().total;
+
+  function submitClaim(amount) {
+    return jane.post('/claim/new').type('form').send({ merchant, amount });
+  }
+
+  await submitClaim('0.01')
+    .expect(302)
+    .expect('Location', '/');
+
+  assert.equal(countClaims.get().total, startingCount + 1);
+
+  const savedClaim = db.prepare(`
+    SELECT claims.amount
+    FROM claims
+    JOIN users ON users.id = claims.user_id
+    WHERE users.username = ? AND claims.merchant = ?
+  `).get('jdoe', merchant);
+
+  assert.ok(savedClaim, 'The valid claim should be saved under Janes account');
+  assert.equal(savedClaim.amount, 0.01);
+
+  for (const amount of ['0', '-1']) {
+    await submitClaim(amount).expect(400);
+
+    assert.equal(
+      countClaims.get().total,
+      startingCount + 1,
+      `Submitting ${amount} should leave the claim count unchanged`
+    );
+  }
+});
