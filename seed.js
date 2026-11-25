@@ -3,9 +3,11 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
-const file = path.join(__dirname, 'expenses.db');
-if (fs.existsSync(file)) fs.unlinkSync(file);
-const db = new Database(file);
+const { databaseFile, receiptsDir } = require('./data-paths');
+
+if (fs.existsSync(databaseFile)) fs.unlinkSync(databaseFile);
+const db = new Database(databaseFile);
+
 db.exec(`CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, password TEXT, name TEXT, role TEXT);
          CREATE TABLE claims (id INTEGER PRIMARY KEY, user_id INTEGER, merchant TEXT,
                               amount REAL, note TEXT, status TEXT);`);
@@ -16,8 +18,11 @@ db.exec(`CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, password TEX
  [2,'Tesco',18.2,'Team lunch'],[3,'Hotel Riu',480,'Offsite accommodation'],
  [4,'Amazon',129.99,'Spare laptop charger']]
   .forEach((c) => db.prepare("INSERT INTO claims (user_id,merchant,amount,note,status) VALUES (?,?,?,?,'pending')").run(...c));
-fs.mkdirSync(path.join(__dirname, 'receipts'), { recursive: true });
-for (let i = 1; i <= 5; i++)
-  fs.writeFileSync(path.join(__dirname, 'receipts', `claim-${i}.txt`),
-    `Meridian Expenses — receipt for claim ${i}\nSample data. Not a real receipt.\n`);
-console.log('seeded:', file);
+fs.mkdirSync(receiptsDir, { recursive: true });
+for (const claim of db.prepare('SELECT id FROM claims').all()) {
+  fs.writeFileSync(
+    path.join(receiptsDir, `claim-${claim.id}.txt`),
+    `Meridian Expenses — receipt for claim ${claim.id}\nSample data. Not a real receipt.\n`
+  );
+}
+console.log('Seeded:', databaseFile);
