@@ -171,5 +171,9 @@ app.get('/admin/users', (req, res) => {
   res.render('admin', { users: rows });
 });
 
-app.listen(3000, '127.0.0.1', () =>
-  console.log('Meridian Expenses (vulnerable) on http://127.0.0.1:3000'));
+if (require.main === module) {
+  app.listen(3000, '127.0.0.1', () =>
+    console.log('Meridian Expenses (vulnerable) on http://127.0.0.1:3000'));
+}
+
+module.exports = app;
