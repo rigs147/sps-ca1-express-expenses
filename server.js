@@ -23,7 +23,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET must be set in the .env file.');
 
 const app = express();
-const db = new Database(path.join(__dirname, 'expenses.db'));
+const { databaseFile, receiptsDir } = require('./data-paths');
+const db = new Database(databaseFile);
+app.locals.db = db;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -121,7 +123,7 @@ app.get('/receipt', (req, res) => {
   const row = db.prepare('SELECT user_id FROM claims WHERE id = ?').get(claimId);
   if (!canViewClaim(u, row)) return res.status(404).send('Not found');
 
-  res.sendFile(filename, { root: path.join(__dirname, 'receipts') });
+  res.sendFile(filename, { root: receiptsDir });
 });
 
 app.get('/export', (req, res) => {
