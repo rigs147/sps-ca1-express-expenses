@@ -19,5 +19,8 @@
   "allowScripts": {
     "bcrypt@6.0.0": true,
     "better-sqlite3@13.0.3": true
+  },
+  "devDependencies": {
+    "supertest": "^7.3.2"
   }
 }
