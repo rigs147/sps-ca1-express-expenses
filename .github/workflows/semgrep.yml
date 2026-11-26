@@ -82,3 +82,32 @@ jobs:
 
       - name: Run ownership tests
         run: node --test tests/security/claim-ownership.test.js
+  sql-injection-gate:
+    
+    name: SQL injection gate
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Install the tested Semgrep release
+        run: |
+          python3 -m venv "$RUNNER_TEMP/sql-gate"
+          "$RUNNER_TEMP/sql-gate/bin/python" -m pip install --disable-pip-version-check semgrep==1.187.0
+      
+      - name: Verify the pinned SQL rule and scan the checked-out source
+        shell: bash
+        env:
+          RULE_REV: a5ad1714f00c9f7fde980cab0ea1d6dc6d414fd2
+          RULE_SHA256: 22dab9b0182dd25bb5aaf3ae796973dc53ea91ccb0e747055fd15ee1ef9a8592
+        run: |
+          set -euo pipefail
+          rule="$RUNNER_TEMP/tainted-sql-string.yaml"
+          curl --fail --silent --show-error --location --retry 2 \
+            "https://raw.githubusercontent.com/semgrep/semgrep-rules/${RULE_REV}/javascript/express/security/injection/tainted-sql-string.yaml" \
+            --output "$rule"
+          printf '%s  %s\n' "$RULE_SHA256" "$rule" | sha256sum --check
+          "$RUNNER_TEMP/sql-gate/bin/semgrep" scan --config "$rule" --metrics=off --disable-version-check --error .
+
+
+
