@@ -136,3 +136,28 @@ test('a claim is saved only when its amount is positive', async () => {
     );
   }
 });
+
+test('ordinary staff are denied the expense export and finance receives the CSV file', async () => {
+  const exportUrl = '/export?month=2026-11';
+
+  await request(app)
+    .get(exportUrl)
+    .expect(302)
+    .expect('Location', '/login');
+
+  const jane = await signIn('jdoe', 'password1');
+  const denied = await jane.get(exportUrl).expect(403);
+
+  assert.equal(denied.headers['content-disposition'], undefined);
+  assert.doesNotMatch(denied.text, /Dublin Coach|Tesco/);
+
+  const ada = await signIn('achen', 'Summer2026');
+  const exported = await ada
+    .get(exportUrl)
+    .expect(200)
+    .expect('Content-Type', /^text\/csv\b/)
+    .expect('Content-Disposition', 'attachment; filename="expenses-2026-11.csv"');
+
+  assert.match(exported.text, /Dublin Coach/);
+  assert.match(exported.text, /Tesco/);
+});
