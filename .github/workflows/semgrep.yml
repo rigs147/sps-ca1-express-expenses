@@ -90,6 +90,8 @@ jobs:
     
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: f3a45a77239c1c69ff5fb802382520d711d0b14d
       - name: Install the tested Semgrep release
         run: |
           python3 -m venv "$RUNNER_TEMP/sql-gate"
